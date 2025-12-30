@@ -1,0 +1,142 @@
+🟢 0) DÉMARRER L’API
+
+Dans IntelliJ
+➡️ Run Main
+Vérifier :
+
+Serveur démarré sur http://localhost:7000
+
+🔍 1) RECHERCHER DES COURS
+A) Par sigle partiel
+GET http://localhost:7000/courses?sigle=IFT
+
+
+Tests :
+
+GET http://localhost:7000/courses?sigle=IFT
+GET http://localhost:7000/courses?sigle=MAT
+GET http://localhost:7000/courses?sigle=LOG
+
+B) Par mot-clé (nom)
+GET http://localhost:7000/courses?name=logiciel
+
+
+Tests :
+
+GET http://localhost:7000/courses?name=programmation
+GET http://localhost:7000/courses?name=algorithme
+
+C) Par description
+GET http://localhost:7000/courses?description=java
+
+📚 2) COURS D’UN PROGRAMME (AVEC OU SANS TRIMESTRE)
+A) Programme seulement
+GET http://localhost:7000/programs/117510/courses
+
+
+Tests :
+
+GET http://localhost:7000/programs/117510/courses
+GET http://localhost:7000/programs/LOG/courses
+
+B) Programme + trimestre (SEULE méthode avec trimestre)
+GET http://localhost:7000/programs/117510/courses?semester=H25
+
+
+Tests :
+
+GET http://localhost:7000/programs/117510/courses?semester=H25
+GET http://localhost:7000/programs/117510/courses?semester=A24
+GET http://localhost:7000/programs/117510/courses?semester=E24
+
+
+🚫 Il n’y a PLUS de :
+
+/courses-by-semester
+
+⏱️ 3) HORAIRE D’UN COURS
+GET http://localhost:7000/courses/IFT2255/schedule?semester=H25
+
+
+Tests :
+
+GET http://localhost:7000/courses/IFT2255/schedule?semester=H25
+GET http://localhost:7000/courses/IFT2015/schedule?semester=A24
+
+✅ 4) ÉLIGIBILITÉ À UN COURS
+GET http://localhost:7000/eligibility?course=IFT2255&completed=IFT1025,IFT2015&cycle=2
+
+
+Tests :
+
+GET http://localhost:7000/eligibility?course=IFT2255&completed=IFT1025&cycle=2   → true
+GET http://localhost:7000/eligibility?course=IFT2255&completed=&cycle=2         → false
+GET http://localhost:7000/eligibility?course=IFT3150&completed=IFT2255&cycle=2  → false
+
+📊 5) RÉSULTATS ACADÉMIQUES
+GET http://localhost:7000/results/IFT2255
+
+
+Tests :
+
+GET http://localhost:7000/results/IFT2255
+GET http://localhost:7000/results/IFT2015
+GET http://localhost:7000/results/IFT0000   → erreur propre
+
+💬 6) AVIS ÉTUDIANTS (HTTP)
+Ajouter un avis
+POST http://localhost:7000/api/opinions
+Content-Type: application/json
+
+{
+  "courseId": "IFT2255",
+  "rating": 4,
+  "comment": "Cours difficile mais très formateur"
+}
+
+Lire les avis
+GET http://localhost:7000/api/opinions?course=IFT2255
+
+🤖 7) AVIS VIA DISCORD
+Lancer le bot (terminal IntelliJ)
+npm install
+npm start
+
+
+ou (Java) :
+
+Run DiscordBotMain
+
+Commandes Discord
+!avis IFT2255 4 Cours difficile
+!avis IFT2255
+!avis IFT0000 5 test
+
+🔁 8) COMPARER DEUX COURS
+GET http://localhost:7000/compare-courses?sigles=IFT2015,IFT2255
+
+
+Tests :
+
+IFT2015 vs IFT2255
+IFT2255 vs IFT3911
+
+🧩 9) CRÉER UN ENSEMBLE DE COURS (HORAIRE GLOBAL)
+POST http://localhost:7000/course-sets/schedule
+Content-Type: application/json
+
+{
+  "semester": "H25",
+  "courses": [
+    "IFT2015",
+    "IFT2255",
+    "IFT3911"
+  ]
+}
+
+
+Tests :
+
+3 cours → OK
+6 cours → OK
+7 cours → ERREUR

@@ -1,0 +1,157 @@
+package com.diro.ift2255.controller;
+
+import com.diro.ift2255.model.Course;
+import com.diro.ift2255.model.CourseDetails;
+import com.diro.ift2255.service.CourseService;
+import com.diro.ift2255.service.ProgramService;
+import com.diro.ift2255.util.HttpClientApi;
+import io.javalin.http.Context;
+
+import java.util.List;
+import java.util.Map;
+
+public class CourseController {
+
+    // Service partagé
+    private static final CourseService courseService = new CourseService();
+    private static final ProgramService programService =
+            new ProgramService();
+
+
+    // =====================================================
+    // 🔹 TEST
+    // =====================================================
+
+    // GET /courses-fake
+    public static void searchCoursesFake(Context ctx) {
+        List<Course> courses = List.of(
+                new Course("IFT2255", "Génie logiciel", 3),
+                new Course("IFT2015", "Structures de données", 3)
+        );
+        ctx.json(courses);
+    }
+
+    // =====================================================
+    // 🔹 RECHERCHE DE COURS
+    // =====================================================
+
+    // GET /courses?sigle=IFT
+    // GET /courses?name=logiciel
+    // GET /courses?description=programmation
+    public static void searchCourses(Context ctx) {
+
+        String siglePartial = ctx.queryParam("sigle");
+        String name = ctx.queryParam("name");
+        String description = ctx.queryParam("description");
+
+        try {
+            List<Course> courses =
+                    courseService.searchCoursesAdvanced(
+                            siglePartial,
+                            name,
+                            description
+                    );
+            ctx.json(courses);
+
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(
+                    Map.of("error", e.getMessage())
+            );
+        } catch (RuntimeException e) {
+            ctx.status(500).json(
+                    Map.of("error", "Erreur interne lors de la recherche de cours")
+            );
+        }
+    }
+
+    // =====================================================
+    // 🔹 DEBUG API PLANIFIUM
+    // =====================================================
+
+    // GET /courses-api-test
+    public static void coursesFromApiRaw(Context ctx) {
+
+        HttpClientApi http = new HttpClientApi();
+
+        String url = "https://planifium-api.onrender.com/api/v1/courses"
+                + "?courses_sigle=IFT2255,IFT2015"
+                + "&response_level=min";
+
+        String body = http.get(url);
+
+        ctx.result(body).contentType("application/json");
+    }
+
+    // =====================================================
+    // 🔹 DÉTAILS D’UN COURS
+    // =====================================================
+
+    // GET /courses/:id
+    public static void getCourseDetails(Context ctx) {
+
+        String id = ctx.pathParam("id");
+
+        // ✅ VALIDATION BACKEND (OBLIGATOIRE)
+        if (id == null || !id.matches("[A-Za-z]{3,}[0-9]{0,4}")) {
+            ctx.status(400).json(
+                    Map.of("error", "Sigle de cours invalide (ex: IFT2255)")
+            );
+            return;
+        }
+
+        try {
+            CourseDetails details =
+                    courseService.getCourseDetails(id.toUpperCase());
+            ctx.json(details);
+
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(
+                    Map.of("error", e.getMessage())
+            );
+        } catch (RuntimeException e) {
+            ctx.status(500).json(
+                    Map.of("error", "Erreur interne lors de la récupération du cours")
+            );
+        }
+    }
+
+
+    // =====================================================
+    // 🔹 COURS PAR TRIMESTRE
+    // =====================================================
+
+
+
+
+
+    // =====================================================
+    // 🔹 COURS PAR TRIMESTRE + PROGRAMME
+    // =====================================================
+
+    // GET /courses/semester-program?semester=A24&program=IFT
+    public static void getCoursesBySemesterAndProgram(Context ctx) {
+
+        String semester = ctx.queryParam("semester");
+        String program = ctx.queryParam("program");
+
+        try {
+            List<Course> courses =
+                    courseService.getCoursesForSemesterAndProgram(
+                            semester,
+                            program
+                    );
+            ctx.json(courses);
+
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(
+                    Map.of("error", e.getMessage())
+            );
+        }
+    }
+
+    // =====================================================
+    // 🔹 HORAIRE D’UN COURS
+    // =====================================================
+
+
+}

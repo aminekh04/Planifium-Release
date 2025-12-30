@@ -1,0 +1,3 @@
+### Recherche de cours par sigle partiel
+GET http://localhost:7000/courses?sigle=IFT
+Accept: application/json

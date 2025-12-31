@@ -7,14 +7,36 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Service responsable de la verification de ladmissibilite a un cours.
+ * Il analyse les prerequis et le cycle detudes afin de determiner
+ * si un etudiant peut suivre un cours donne.
+ */
 public class EligibilityService {
 
+    /**
+     * Service utilise pour acceder aux details des cours.
+     */
     private final CourseService courseService;
 
+    /**
+     * Construit le service de verification de ladmissibilite.
+     *
+     * @param courseService service des cours
+     */
     public EligibilityService(CourseService courseService) {
         this.courseService = courseService;
     }
 
+    /**
+     * Verifie ladmissibilite a un cours en fonction des cours completes
+     * et du cycle detudes fourni.
+     *
+     * @param courseId identifiant du cours
+     * @param completedCourses liste des cours completes
+     * @param cycle cycle detudes
+     * @return le resultat de la verification dadmissibilite
+     */
     public EligibilityResult checkEligibility(
             String courseId,
             List<String> completedCourses,
@@ -24,23 +46,12 @@ public class EligibilityService {
         CourseDetails course =
                 courseService.getCourseDetails(courseId);
 
-        //  LOGS DEBUG (ICI C’EST LE BON ENDROIT)
-        System.out.println("===== ELIGIBILITY DEBUG =====");
-        System.out.println("COURSE ID = " + courseId);
-        System.out.println("PREREQS FROM PLANIFIUM = " + course.getPrerequisiteCourses());
-        System.out.println("COMPLETED (RAW) = " + completedCourses);
-        System.out.println("CYCLE = " + cycle);
-
-        //  Normalisation des cours complétés
         List<String> completedNormalized =
                 completedCourses.stream()
                         .map(String::trim)
                         .map(String::toUpperCase)
                         .collect(Collectors.toList());
 
-        System.out.println("COMPLETED (NORMALIZED) = " + completedNormalized);
-
-        // 1️ Vérifier les prérequis
         List<String> missing = new ArrayList<>();
 
         for (String prereq : course.getPrerequisiteCourses()) {
@@ -51,24 +62,17 @@ public class EligibilityService {
             }
         }
 
-        System.out.println("MISSING PREREQS = " + missing);
-
         if (!missing.isEmpty()) {
-            System.out.println(" RESULT = NOT ELIGIBLE (prerequisites)");
             return new EligibilityResult(
                     false,
                     missing,
-                    "Prérequis manquants"
+                    "Prerequis manquants"
             );
         }
 
-        // 2️⃣ Vérifier le cycle requis
         int requiredCycle = estimateRequiredCycle(courseId);
 
-        System.out.println("REQUIRED CYCLE = " + requiredCycle);
-
         if (cycle < requiredCycle) {
-            System.out.println(" RESULT = NOT ELIGIBLE (cycle)");
             return new EligibilityResult(
                     false,
                     List.of(),
@@ -76,8 +80,6 @@ public class EligibilityService {
             );
         }
 
-        // 3️⃣ OK
-        System.out.println(" RESULT = ELIGIBLE");
         return new EligibilityResult(
                 true,
                 List.of(),
@@ -85,7 +87,12 @@ public class EligibilityService {
         );
     }
 
-    // Heuristique simple et défendable
+    /**
+     * Estime le cycle minimal requis pour suivre un cours.
+     *
+     * @param courseId identifiant du cours
+     * @return le cycle requis
+     */
     private int estimateRequiredCycle(String courseId) {
 
         if (courseId.matches(".*[3-4][0-9]{3}$")) {

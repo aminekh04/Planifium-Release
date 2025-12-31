@@ -8,14 +8,31 @@ import io.javalin.http.Context;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Controleur responsable de la verification de l admissibilite a un cours.
+ * Il permet de determiner si un etudiant satisfait les prerequis necessaires.
+ */
 public class EligibilityController {
 
+    /**
+     * Service utilise pour acceder aux informations sur les cours.
+     */
     private static final CourseService courseService =
             new CourseService();
 
+    /**
+     * Service utilise pour verifier l admissibilite a un cours.
+     */
     private static final EligibilityService service =
             new EligibilityService(courseService);
 
+    /**
+     * Verifie l admissibilite a un cours en fonction des cours completes
+     * et du cycle detudes fourni dans la requete.
+     *
+     * @param ctx contexte de la requete http
+     * @return le resultat de la verification d admissibilite
+     */
     public static void checkEligibility(Context ctx) {
 
         String course = ctx.queryParam("course");

@@ -10,16 +10,28 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Controleur responsable de la comparaison de plusieurs cours
+ * Il gere les requetes permettant d analyser et comparer des cours
+ */
 public class CourseComparisonController {
 
+    /**
+     * Service utilise pour effectuer la comparaison des cours
+     */
     private static final CourseComparisonService service =
             new CourseComparisonService(
                     new CourseService(),
                     new OpinionService(),
-                    new ResultService()   // ✅ PARAMÈTRE MANQUANT
+                    new ResultService()   // PARAMÈTRE MANQUANT
             );
 
-    // GET /compare-courses?courses=IFT2255,IFT2015
+    /**
+     * Methode qui traite la requete de comparaison de cours
+     * Les cours a comparer sont fournis via les parametres de la requete
+     *
+     * @param ctx contexte de la requete http
+     */
     public static void compareCourses(Context ctx) {
 
         String param = ctx.queryParam("courses");

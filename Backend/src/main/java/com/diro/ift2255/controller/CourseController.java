@@ -10,19 +10,29 @@ import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Controleur responsable de la gestion des cours.
+ * Il expose des points d acces permettant la recherche
+ * et la consultation des informations de cours.
+ */
 public class CourseController {
 
-    // Service partagé
+    /**
+     * Service utilise pour les operations liees aux cours.
+     */
     private static final CourseService courseService = new CourseService();
+
+    /**
+     * Service utilise pour les operations liees aux programmes.
+     */
     private static final ProgramService programService =
             new ProgramService();
 
-
-    // =====================================================
-    // 🔹 TEST
-    // =====================================================
-
-    // GET /courses-fake
+    /**
+     * Fournit une liste de cours fictifs a des fins de test.
+     *
+     * @param ctx contexte de la requete http
+     */
     public static void searchCoursesFake(Context ctx) {
         List<Course> courses = List.of(
                 new Course("IFT2255", "Génie logiciel", 3),
@@ -31,13 +41,12 @@ public class CourseController {
         ctx.json(courses);
     }
 
-    // =====================================================
-    // 🔹 RECHERCHE DE COURS
-    // =====================================================
-
-    // GET /courses?sigle=IFT
-    // GET /courses?name=logiciel
-    // GET /courses?description=programmation
+    /**
+     * Effectue une recherche de cours selon les criteres fournis
+     * dans les parametres de la requete.
+     *
+     * @param ctx contexte de la requete http
+     */
     public static void searchCourses(Context ctx) {
 
         String siglePartial = ctx.queryParam("sigle");
@@ -64,11 +73,11 @@ public class CourseController {
         }
     }
 
-    // =====================================================
-    // 🔹 DEBUG API PLANIFIUM
-    // =====================================================
-
-    // GET /courses-api-test
+    /**
+     * Recupere les donnees brutes des cours depuis une api externe.
+     *
+     * @param ctx contexte de la requete http
+     */
     public static void coursesFromApiRaw(Context ctx) {
 
         HttpClientApi http = new HttpClientApi();
@@ -82,16 +91,16 @@ public class CourseController {
         ctx.result(body).contentType("application/json");
     }
 
-    // =====================================================
-    // 🔹 DÉTAILS D’UN COURS
-    // =====================================================
-
-    // GET /courses/:id
+    /**
+     * Recupere les details complets dun cours a partir de son identifiant.
+     *
+     * @param ctx contexte de la requete http
+     * @throws IllegalArgumentException si le sigle du cours est invalide
+     */
     public static void getCourseDetails(Context ctx) {
 
         String id = ctx.pathParam("id");
 
-        // ✅ VALIDATION BACKEND (OBLIGATOIRE)
         if (id == null || !id.matches("[A-Za-z]{3,}[0-9]{0,4}")) {
             ctx.status(400).json(
                     Map.of("error", "Sigle de cours invalide (ex: IFT2255)")
@@ -115,20 +124,11 @@ public class CourseController {
         }
     }
 
-
-    // =====================================================
-    // 🔹 COURS PAR TRIMESTRE
-    // =====================================================
-
-
-
-
-
-    // =====================================================
-    // 🔹 COURS PAR TRIMESTRE + PROGRAMME
-    // =====================================================
-
-    // GET /courses/semester-program?semester=A24&program=IFT
+    /**
+     * Recupere les cours offerts pour un trimestre et un programme donnes.
+     *
+     * @param ctx contexte de la requete http
+     */
     public static void getCoursesBySemesterAndProgram(Context ctx) {
 
         String semester = ctx.queryParam("semester");
@@ -148,10 +148,5 @@ public class CourseController {
             );
         }
     }
-
-    // =====================================================
-    // 🔹 HORAIRE D’UN COURS
-    // =====================================================
-
 
 }

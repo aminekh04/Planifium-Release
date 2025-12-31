@@ -9,18 +9,36 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Service responsable de la generation dhoraires a partir dun ensemble de cours.
+ * Il permet dagreger les horaires et de detecter les conflits temporels.
+ */
 public class CourseSetService {
 
+    /**
+     * Nombre maximal de cours autorises dans un ensemble.
+     */
     private static final int MAX_COURSES = 6;
 
+    /**
+     * Service utilise pour recuperer les horaires des cours.
+     */
     private final CourseScheduleService scheduleService;
 
+    /**
+     * Construit le service de gestion des ensembles de cours.
+     */
     public CourseSetService() {
         this.scheduleService = new CourseScheduleService();
     }
 
     /**
-     * Crée l'horaire résultant d'un ensemble de cours (max 6)
+     * Cree un horaire a partir dun ensemble de cours pour un trimestre donne.
+     *
+     * @param courseIds liste des identifiants de cours
+     * @param semester trimestre concerne
+     * @return le resultat contenant les horaires et les conflits
+     * @throws IllegalArgumentException si les parametres sont invalides
      */
     public CourseSetResult createCourseSetSchedule(
             List<String> courseIds,
@@ -37,7 +55,6 @@ public class CourseSetService {
 
         List<CourseScheduleWithCourse> allSchedules = new ArrayList<>();
 
-        // 1️⃣ Récupération des horaires pour chaque cours
         for (String courseId : courseIds) {
 
             List<CourseSchedule> schedules =
@@ -50,24 +67,23 @@ public class CourseSetService {
             }
         }
 
-        // ✅ DÉDUPLICATION ICI (LA CLÉ)
         List<CourseScheduleWithCourse> uniqueSchedules =
                 allSchedules.stream()
                         .distinct()
                         .toList();
 
-        // 2️⃣ Détection des conflits
         List<CourseConflict> conflicts =
                 detectConflicts(uniqueSchedules);
 
         return new CourseSetResult(uniqueSchedules, conflicts);
     }
 
-
-
-    // ============================
-    // DÉTECTION DES CONFLITS (PROPRE)
-    // ============================
+    /**
+     * Detecte les conflits dhoraires entre les cours.
+     *
+     * @param schedules liste des horaires a analyser
+     * @return la liste des conflits detectes
+     */
     public List<CourseConflict> detectConflicts(
             List<CourseScheduleWithCourse> schedules
     ) {
@@ -81,10 +97,7 @@ public class CourseSetService {
                 CourseScheduleWithCourse a = schedules.get(i);
                 CourseScheduleWithCourse b = schedules.get(j);
 
-                //  Ignore même cours
                 if (a.getCourseId().equals(b.getCourseId())) continue;
-
-                //  Jour différent
                 if (!a.getDay().equals(b.getDay())) continue;
 
                 LocalTime startA = LocalTime.parse(a.getStartTime());
@@ -98,10 +111,9 @@ public class CourseSetService {
 
                 if (!overlap) continue;
 
-                //  Clé d’unicité : 1 conflit / paire / jour
                 String key =
-                        a.getCourseId() + "|" +
-                                b.getCourseId() + "|" +
+                        a.getCourseId() +
+                                b.getCourseId() +
                                 a.getDay();
 
                 if (seen.contains(key)) continue;
@@ -121,13 +133,24 @@ public class CourseSetService {
         return conflicts;
     }
 
-    // ============================
-    // UTILITAIRES
-    // ============================
+    /**
+     * Retourne la valeur maximale entre deux heures.
+     *
+     * @param a premiere heure
+     * @param b seconde heure
+     * @return l heure la plus tardive
+     */
     private LocalTime max(LocalTime a, LocalTime b) {
         return a.isAfter(b) ? a : b;
     }
 
+    /**
+     * Retourne la valeur minimale entre deux heures.
+     *
+     * @param a premiere heure
+     * @param b seconde heure
+     * @return l heure la plus tot
+     */
     private LocalTime min(LocalTime a, LocalTime b) {
         return a.isBefore(b) ? a : b;
     }

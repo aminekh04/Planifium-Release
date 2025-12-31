@@ -7,11 +7,23 @@ import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Controleur responsable de la gestion des avis sur les cours.
+ * Il permet lajout et la consultation des avis associes aux cours.
+ */
 public class OpinionController {
 
+    /**
+     * Service utilise pour la gestion des avis.
+     */
     private static final OpinionService service = new OpinionService();
 
-    // POST /api/opinions
+    /**
+     * Ajoute un avis pour un cours a partir des donnees fournies dans la requete.
+     *
+     * @param ctx contexte de la requete http
+     * @throws IllegalArgumentException si les donnees fournies sont invalides
+     */
     public static void addOpinion(Context ctx) {
 
         Opinion opinion = ctx.bodyAsClass(Opinion.class);
@@ -24,7 +36,12 @@ public class OpinionController {
         }
     }
 
-    // GET /api/opinions?course_code=IFT2255
+    /**
+     * Recupere la liste des avis associes a un cours donne.
+     *
+     * @param ctx contexte de la requete http
+     * @return la liste des avis associes au cours
+     */
     public static void getOpinions(Context ctx) {
 
         String course = ctx.queryParam("course");
@@ -32,7 +49,7 @@ public class OpinionController {
         List<Opinion> opinions =
                 service.getOpinions(course);
 
-        ctx.json(opinions);   // peut être [] → c’est voulu
+        ctx.json(opinions);
     }
 
 }

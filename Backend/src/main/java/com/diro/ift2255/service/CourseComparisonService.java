@@ -6,12 +6,35 @@ import com.diro.ift2255.model.Opinion;
 
 import java.util.List;
 
+/**
+ * Service responsable de la comparaison de cours.
+ * Il combine les informations descriptives les avis
+ * et les resultats academiques pour produire une comparaison.
+ */
 public class CourseComparisonService {
 
+    /**
+     * Service utilise pour acceder aux details des cours.
+     */
     private final CourseService courseService;
+
+    /**
+     * Service utilise pour acceder aux avis des cours.
+     */
     private final OpinionService opinionService;
+
+    /**
+     * Service utilise pour acceder aux resultats academiques.
+     */
     private final ResultService resultService;
 
+    /**
+     * Construit le service de comparaison de cours.
+     *
+     * @param courseService service des cours
+     * @param opinionService service des avis
+     * @param resultService service des resultats
+     */
     public CourseComparisonService(
             CourseService courseService,
             OpinionService opinionService,
@@ -22,6 +45,13 @@ public class CourseComparisonService {
         this.resultService = resultService;
     }
 
+    /**
+     * Compare deux cours fournis par leur identifiant.
+     *
+     * @param courses liste contenant exactement deux cours
+     * @return la liste des cours compares
+     * @throws IllegalArgumentException si le nombre de cours est invalide
+     */
     public List<ComparedCourse> compareCourses(List<String> courses) {
 
         if (courses == null || courses.size() != 2) {
@@ -33,6 +63,12 @@ public class CourseComparisonService {
                 .toList();
     }
 
+    /**
+     * Construit un objet de comparaison pour un cours donne.
+     *
+     * @param courseId identifiant du cours
+     * @return le cours comparable construit
+     */
     private ComparedCourse buildComparedCourse(String courseId) {
 
         CourseDetails details =
@@ -43,10 +79,8 @@ public class CourseComparisonService {
 
         int reviewCount = opinions.size();
 
-        // charge de travail = AVIS
         int workload = estimateWorkload(opinions);
 
-        //  difficulté = results.csv
         int difficulty =
                 resultService.estimateDifficulty(courseId);
 
@@ -60,10 +94,12 @@ public class CourseComparisonService {
         );
     }
 
-    // ============================
-    // 🔧 MÉTHODES MANQUANTES (ICI)
-    // ============================
-
+    /**
+     * Estime la charge de travail a partir des avis.
+     *
+     * @param opinions liste des avis
+     * @return la charge de travail estimee
+     */
     private int estimateWorkload(List<Opinion> opinions) {
         if (opinions.isEmpty()) return 3;
 
@@ -73,6 +109,12 @@ public class CourseComparisonService {
                 .orElse(3);
     }
 
+    /**
+     * Extrait une estimation de charge de travail a partir du texte.
+     *
+     * @param text texte de lavis
+     * @return la charge de travail estimee
+     */
     private int extractWorkload(String text) {
         if (text == null) return 3;
 

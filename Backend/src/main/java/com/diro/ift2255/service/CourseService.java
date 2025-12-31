@@ -2,26 +2,46 @@ package com.diro.ift2255.service;
 
 import com.diro.ift2255.model.Course;
 import com.diro.ift2255.model.CourseDetails;
-import com.diro.ift2255.model.CourseSchedule;
 import com.diro.ift2255.util.HttpClientApi;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
+/**
+ * Service responsable de la gestion des cours.
+ * Il permet la recherche la consultation des details
+ * et le filtrage des cours selon differents criteres.
+ */
 public class CourseService {
 
-    private static final String BASE_URL = "https://planifium-api.onrender.com/api/v1";
+    /**
+     * Adresse de base de l api externe utilisee.
+     */
+    private static final String BASE_URL =
+            "https://planifium-api.onrender.com/api/v1";
 
+    /**
+     * Client http utilise pour effectuer les appels reseau.
+     */
     private final HttpClientApi http;
+
+    /**
+     * Outil de traitement des donnees json.
+     */
     private final ObjectMapper mapper;
+
+    /**
+     * Service utilise pour acceder aux programmes.
+     */
     private final ProgramService programService;
 
+    /**
+     * Construit le service de gestion des cours.
+     */
     public CourseService() {
         this.http = new HttpClientApi();
         this.mapper = new ObjectMapper();
@@ -29,16 +49,19 @@ public class CourseService {
     }
 
     /**
-     * Recherche de cours.
-     * - si "sigles" non null → utilise courses_sigle=...
-     * - sinon si "name" non null → utilise name=...
+     * Effectue une recherche de cours a partir de criteres simples.
+     *
+     * @param sigles identifiants de cours
+     * @param name nom du cours
+     * @return la liste des cours trouves
+     * @throws IllegalArgumentException si aucun critere nest fourni
      */
     public List<Course> searchCourses(String sigles, String name) {
 
         if ((sigles == null || sigles.isBlank()) &&
                 (name == null || name.isBlank())) {
             throw new IllegalArgumentException(
-                    "Vous devez fournir 'sigles' ou 'name'."
+                    "Vous devez fournir sigles ou name"
             );
         }
 
@@ -76,13 +99,17 @@ public class CourseService {
         }
     }
 
-
     /**
-     * Détails d'un cours : GET /courses/{course_id}
+     * Recupere les details complets dun cours.
+     *
+     * @param courseId identifiant du cours
+     * @return les details du cours
+     * @throws IllegalArgumentException si l identifiant est invalide
      */
     public CourseDetails getCourseDetails(String courseId) {
+
         if (courseId == null || courseId.isBlank()) {
-            throw new IllegalArgumentException("courseId ne peut pas être vide.");
+            throw new IllegalArgumentException("courseId ne peut pas etre vide");
         }
 
         try {
@@ -91,13 +118,11 @@ public class CourseService {
             String json = http.get(url);
             JsonNode node = mapper.readTree(json);
 
-            // Champs principaux
             String id = node.hasNonNull("id") ? node.get("id").asText() : "";
             String name = node.hasNonNull("name") ? node.get("name").asText() : "";
             int credits = node.hasNonNull("credits") ? node.get("credits").asInt() : 0;
             String description = node.hasNonNull("description") ? node.get("description").asText() : "";
 
-            // Prérequis (liste de sigles)
             List<String> prereqCourses = new ArrayList<>();
             if (node.hasNonNull("prerequisite_courses")) {
                 for (JsonNode p : node.get("prerequisite_courses")) {
@@ -109,8 +134,9 @@ public class CourseService {
                     ? node.get("requirement_text").asText()
                     : "";
 
-            // Dispo par trimestre (autumn / winter / summer)
-            boolean autumn = false, winter = false, summer = false;
+            boolean autumn = false;
+            boolean winter = false;
+            boolean summer = false;
             if (node.hasNonNull("available_terms")) {
                 JsonNode terms = node.get("available_terms");
                 autumn = terms.hasNonNull("autumn") && terms.get("autumn").asBoolean();
@@ -118,8 +144,8 @@ public class CourseService {
                 summer = terms.hasNonNull("summer") && terms.get("summer").asBoolean();
             }
 
-            // Dispo jour / soir
-            boolean day = false, night = false;
+            boolean day = false;
+            boolean night = false;
             if (node.hasNonNull("available_periods")) {
                 JsonNode periods = node.get("available_periods");
                 day = periods.hasNonNull("day") && periods.get("day").asBoolean();
@@ -146,10 +172,22 @@ public class CourseService {
             );
 
         } catch (Exception e) {
-            throw new RuntimeException("Erreur lors de la récupération des détails du cours " + courseId, e);
+            throw new RuntimeException(
+                    "Erreur lors de la recuperation des details du cours " + courseId,
+                    e
+            );
         }
     }
 
+    /**
+     * Effectue une recherche avancee de cours.
+     *
+     * @param siglePartial debut du sigle du cours
+     * @param name nom du cours
+     * @param description description du cours
+     * @return la liste des cours trouves
+     * @throws IllegalArgumentException si aucun critere nest fourni
+     */
     public List<Course> searchCoursesAdvanced(
             String siglePartial,
             String name,
@@ -160,7 +198,7 @@ public class CourseService {
                 && (name == null || name.isBlank())
                 && (description == null || description.isBlank())) {
             throw new IllegalArgumentException(
-                    "Au moins un critère est requis"
+                    "Au moins un critere est requis"
             );
         }
 
@@ -201,58 +239,31 @@ public class CourseService {
             return result;
 
         } catch (Exception e) {
-            throw new RuntimeException("Erreur recherche avancée", e);
-        }
-    }
-    private void validateSemesterFormat(String semester) {
-
-        if (semester == null || semester.isBlank()) {
-            throw new IllegalArgumentException(
-                    "semester requis (ex: H25, A24, E24)"
-            );
-        }
-
-        if (!semester.trim().toUpperCase().matches("^[AHE][0-9]{2}$")) {
-            throw new IllegalArgumentException(
-                    "Format de trimestre invalide (ex: H25, A24, E24)"
-            );
+            throw new RuntimeException("Erreur recherche avancee", e);
         }
     }
 
-    private void validateProgramId(String programId) {
-
-        if (programId == null || programId.isBlank()) {
-            throw new IllegalArgumentException("programId requis");
-        }
-
-        // À l’UdeM : ID programme = 6 chiffres
-        if (!programId.matches("^[0-9]{6}$")) {
-            throw new IllegalArgumentException(
-                    "Format de programme invalide (ex: 117510)"
-            );
-        }
-    }
-
-
-
-
-
-
+    /**
+     * Recupere les cours offerts pour un trimestre et un programme.
+     *
+     * @param semester trimestre concerne
+     * @param programId identifiant du programme
+     * @return la liste des cours offerts
+     */
     public List<Course> getCoursesForSemesterAndProgram(
             String semester,
             String programId
     ) {
 
-        validateProgramId(programId);        // ✅ ICI
-        validateSemesterFormat(semester);    // ✅ ICI
+        validateProgramId(programId);
+        validateSemesterFormat(semester);
 
         List<Course> programCourses =
                 programService.getCoursesForProgram(programId.trim());
 
-        // ⚠️ programme inexistant → ERREUR
         if (programCourses.isEmpty()) {
             throw new IllegalArgumentException(
-                    "Programme inexistant : " + programId
+                    "Programme inexistant " + programId
             );
         }
 
@@ -266,14 +277,49 @@ public class CourseService {
                 .toList();
     }
 
+    /**
+     * Valide le format du trimestre.
+     *
+     * @param semester trimestre a valider
+     */
+    private void validateSemesterFormat(String semester) {
 
+        if (semester == null || semester.isBlank()) {
+            throw new IllegalArgumentException("semester requis");
+        }
 
+        if (!semester.trim().toUpperCase().matches("^[AHE][0-9]{2}$")) {
+            throw new IllegalArgumentException(
+                    "Format de trimestre invalide"
+            );
+        }
+    }
 
+    /**
+     * Valide l identifiant du programme.
+     *
+     * @param programId identifiant du programme
+     */
+    private void validateProgramId(String programId) {
 
+        if (programId == null || programId.isBlank()) {
+            throw new IllegalArgumentException("programId requis");
+        }
 
+        if (!programId.matches("^[0-9]{6}$")) {
+            throw new IllegalArgumentException(
+                    "Format de programme invalide"
+            );
+        }
+    }
 
-
-
+    /**
+     * Indique si un cours est offert pour un trimestre donne.
+     *
+     * @param d details du cours
+     * @param semester trimestre concerne
+     * @return vrai si le cours est offert
+     */
     private boolean isOfferedThisSemester(CourseDetails d, String semester) {
 
         if (semester == null || semester.length() < 1) {
@@ -286,16 +332,8 @@ public class CourseService {
             case 'H' -> d.isAvailableWinter();
             case 'A' -> d.isAvailableAutumn();
             case 'E' -> d.isAvailableSummer();
-            default  -> false;
+            default -> false;
         };
     }
-
-
-
-
-
-
-
-
 
 }
